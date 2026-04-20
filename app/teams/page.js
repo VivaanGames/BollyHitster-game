@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import songs from '../../data/songs.json'
 
@@ -11,9 +11,9 @@ const PlayIcon = () => (
   </svg>
 )
 
-const PauseIcon = () => (
-  <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+const SpotifyIcon = () => (
+  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/>
   </svg>
 )
 
@@ -45,7 +45,7 @@ export default function TeamsPage() {
   const [currentSong, setCurrentSong] = useState(null)
   const [usedSongIds, setUsedSongIds] = useState(new Set())
   
-  // Round phases: 'listening' | 'placing' | 'stealing' | 'result' | 'bonus'
+  // Round phases: 'listening' | 'placing' | 'stealing' | 'result'
   const [roundPhase, setRoundPhase] = useState('listening')
   const [isPlaying, setIsPlaying] = useState(false)
   
@@ -68,9 +68,6 @@ export default function TeamsPage() {
   
   // Winner
   const [winner, setWinner] = useState(null)
-
-  // DJ Mode
-  const [djMode, setDjMode] = useState(false)
 
   // Get random unused song
   const getRandomSong = useCallback(() => {
@@ -137,15 +134,17 @@ export default function TeamsPage() {
     setGamePhase('playing')
   }
 
-  // Play song - opens Spotify OR shows DJ instructions
-  const playSong = () => {
+  // DJ opens Spotify
+  const openSpotify = () => {
     if (currentSong) {
-      if (!djMode) {
-        window.open(currentSong.spotify_url, '_blank')
-      }
-      setIsPlaying(true)
-      setRoundPhase('placing')
+      window.open(currentSong.spotify_url, '_blank')
     }
+  }
+
+  // Mark song as playing
+  const markSongPlaying = () => {
+    setIsPlaying(true)
+    setRoundPhase('placing')
   }
 
   const placeSongAtPosition = (position) => {
@@ -389,25 +388,18 @@ export default function TeamsPage() {
           </div>
         </div>
 
-        {/* DJ Mode Toggle */}
-        <div className="w-full max-w-md glass-card rounded-xl p-4 mb-6">
-          <div className="flex items-center justify-between">
+        {/* DJ Mode Info */}
+        <div className="w-full max-w-md glass-card rounded-xl p-4 mb-6 border border-green-500/30 bg-green-500/5">
+          <div className="flex items-start gap-3">
+            <div className="text-2xl">🎧</div>
             <div>
-              <h3 className="font-semibold text-white">🎧 DJ Mode</h3>
-              <p className="text-xs text-gray-400">One person controls music on speaker</p>
+              <h3 className="font-semibold text-green-400 mb-1">DJ Mode Built-in!</h3>
+              <p className="text-xs text-gray-400">
+                Designate one person as DJ. They'll tap "Open in Spotify" while players look away. 
+                Song plays on speaker, everyone guesses, no one sees the song name!
+              </p>
             </div>
-            <button
-              onClick={() => setDjMode(!djMode)}
-              className={`w-14 h-8 rounded-full transition-all ${djMode ? 'bg-green-500' : 'bg-gray-600'}`}
-            >
-              <div className={`w-6 h-6 bg-white rounded-full transition-all ${djMode ? 'ml-7' : 'ml-1'}`} />
-            </button>
           </div>
-          {djMode && (
-            <div className="mt-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-xs text-green-400">
-              ✅ DJ will search & play songs on Spotify. Game won't open Spotify automatically.
-            </div>
-          )}
         </div>
 
         {/* Rules */}
@@ -415,7 +407,8 @@ export default function TeamsPage() {
           <h3 className="font-semibold text-white mb-3">📋 How to Play:</h3>
           <ul className="space-y-2">
             <li>• Each team starts with <span className="text-bollywood-gold">{STARTING_TOKENS} tokens</span> (max {MAX_TOKENS})</li>
-            <li>• Listen to song → Place in timeline by year</li>
+            <li>• 🎧 DJ opens Spotify (players look away!)</li>
+            <li>• Listen → Place card in timeline by year</li>
             <li>• <span className="text-yellow-400">HITSTER!</span> - Steal if opponent is wrong (1 token)</li>
             <li>• <span className="text-green-400">Bonus token</span> for naming song + artist</li>
             <li>• First to {WINNING_CARDS} cards wins! 🏆</li>
@@ -506,7 +499,6 @@ export default function TeamsPage() {
         
         <div className={`text-center py-2 font-bold text-white ${currentTeam === 1 ? 'bg-blue-500' : 'bg-red-500'}`}>
           {currentTeam === 1 ? '🔵' : '🔴'} {getCurrentTeamName()}'s Turn
-          {djMode && <span className="ml-2 text-xs opacity-75">🎧 DJ Mode</span>}
         </div>
       </header>
 
@@ -514,14 +506,14 @@ export default function TeamsPage() {
       <main className="flex-1 p-4 max-w-2xl mx-auto w-full overflow-y-auto">
         {currentSong && (
           <>
-            {/* Song Card - NO INFO SHOWN until result! */}
+            {/* Song Card - HIDDEN INFO */}
             <div className={`glass-card rounded-2xl p-5 mb-4 border-2 ${
               roundPhase === 'result'
                 ? placementCorrect ? 'border-green-500' : stealSuccess ? 'border-yellow-500' : 'border-red-500'
                 : currentTeam === 1 ? 'border-blue-500/30' : 'border-red-500/30'
             }`}>
               <div className="text-center">
-                {/* ONLY show song info AFTER result is revealed */}
+                {/* ONLY show song info AFTER result */}
                 {roundPhase === 'result' ? (
                   <div className="mb-4 animate-fade-in">
                     <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-xs text-gray-400 mb-3">
@@ -535,9 +527,9 @@ export default function TeamsPage() {
                   <div className="mb-4">
                     <div className="text-6xl mb-3">🎵</div>
                     {!isPlaying ? (
-                      <p className="text-gray-400">Listen to the song and guess the year!</p>
+                      <p className="text-gray-400">DJ: Open Spotify, then everyone guesses!</p>
                     ) : (
-                      <p className="text-green-400 animate-pulse">🔊 Song is playing...</p>
+                      <p className="text-green-400 animate-pulse">🔊 Song is playing... Listen and guess!</p>
                     )}
                   </div>
                 )}
@@ -553,32 +545,31 @@ export default function TeamsPage() {
                   )}
                 </div>
 
-                {/* Play Button - only in listening phase */}
-                {roundPhase === 'listening' && (
-                  <>
-                    {djMode ? (
-                      <div className="space-y-3">
-                        <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
-                          <p className="text-purple-400 text-sm mb-2">🎧 DJ: Search for song #{currentSong.id} on Spotify</p>
-                          <p className="text-gray-500 text-xs">Play it on the speaker, then tap below</p>
-                        </div>
-                        <button
-                          onClick={playSong}
-                          className="w-full py-4 rounded-xl bg-gradient-to-r from-bollywood-gold to-bollywood-accent text-black font-bold text-lg btn-glow"
-                        >
-                          ▶️ Song is Playing
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={playSong}
-                        className="w-full py-4 rounded-xl bg-gradient-to-r from-bollywood-gold to-bollywood-accent text-black font-bold text-lg flex items-center justify-center gap-3 btn-glow"
-                      >
-                        <PlayIcon />
-                        ▶️ Play on Spotify
-                      </button>
-                    )}
-                  </>
+                {/* DJ Controls - Only in listening phase */}
+                {roundPhase === 'listening' && !isPlaying && (
+                  <div className="space-y-3">
+                    {/* DJ Warning */}
+                    <div className="p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm">
+                      🙈 <strong>Players look away!</strong> DJ tap below to open song
+                    </div>
+                    
+                    {/* Open Spotify Button */}
+                    <button
+                      onClick={openSpotify}
+                      className="w-full py-4 rounded-xl bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold text-lg flex items-center justify-center gap-3 transition-all"
+                    >
+                      <SpotifyIcon />
+                      🎧 DJ: Open in Spotify
+                    </button>
+                    
+                    {/* Song Playing Confirmation */}
+                    <button
+                      onClick={markSongPlaying}
+                      className="w-full py-4 rounded-xl bg-gradient-to-r from-bollywood-gold to-bollywood-accent text-black font-bold text-lg btn-glow"
+                    >
+                      ✅ Song is Playing - Continue
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
